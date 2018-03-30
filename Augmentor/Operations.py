@@ -1304,7 +1304,6 @@ class Distort(Operation):
             polygons_tmp = polygons[:]
             for a, b, c, d in polygon_indices:
                 
-                #print("a: ",polygons[a])
                 x1, y1, x2, y2, x3, y3, x4, y4 = polygons[a]
                 polygons_tmp[a] = [x1, y1,
                                x2, y2,
@@ -1330,8 +1329,6 @@ class Distort(Operation):
                                x4, y4]
 
             generated_mesh = []
-            #print("dimension: ",dimensions)
-            print("polygons: ",polygons_tmp)
             
             for i in range(len(dimensions)):
                 generated_mesh.append([dimensions[i], polygons_tmp[i]])
@@ -1341,9 +1338,6 @@ class Distort(Operation):
         augmented_images = []
         
         for image in images:
-            #print("polygon_indices: ",polygon_indices)
-            print("polygon: ",polygons)
-            #print("dx and dy: ", dx,dy)
             augmented_images.append(do(image))
 
         return augmented_images
