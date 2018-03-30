@@ -846,25 +846,25 @@ class Crop(Operation):
         :return: The transformed image(s) as a list of object(s) of type
          PIL.Image.
         """
+        
+        w, h = images[0].size
+        left_shift = random.randint(0, int((w - self.width)))
+        down_shift = random.randint(0, int((h - self.height)))
 
         def do(image):
-
-            w, h = image.size
-
             # TODO: Fix. We may want a full crop.
             if self.width > w or self.height > h:
                 return image
-
+            
             if self.centre:
                 return image.crop(((w/2)-(self.width/2), (h/2)-(self.height/2), (w/2)+(self.width/2), (h/2)+(self.height/2)))
             else:
-                left_shift = random.randint(0, int((w - self.width)))
-                down_shift = random.randint(0, int((h - self.height)))
                 return image.crop((left_shift, down_shift, self.width + left_shift, self.height + down_shift))
 
         augmented_images = []
 
         for image in images:
+                    
             augmented_images.append(do(image))
 
         return augmented_images
@@ -1187,7 +1187,7 @@ class Scale(Operation):
             new_h = int(h * self.scale_factor)
             new_w = int(w * self.scale_factor)
 
-            return image.resize((new_w, new_h), resample=Image.BICUBIC)
+            return image.resize((new_w, new_h), resample=Image.NEAREST)
 
         augmented_images = []
 
@@ -1296,46 +1296,54 @@ class Distort(Operation):
         for i in range((vertical_tiles * horizontal_tiles) - 1):
             if i not in last_row and i not in last_column:
                 polygon_indices.append([i, i + 1, i + horizontal_tiles, i + 1 + horizontal_tiles])
-
+        
+        dx = random.randint(-self.magnitude, self.magnitude)
+        dy = random.randint(-self.magnitude, self.magnitude)
+        
         def do(image):
-
+            polygons_tmp = polygons[:]
             for a, b, c, d in polygon_indices:
-                dx = random.randint(-self.magnitude, self.magnitude)
-                dy = random.randint(-self.magnitude, self.magnitude)
-
+                
+                #print("a: ",polygons[a])
                 x1, y1, x2, y2, x3, y3, x4, y4 = polygons[a]
-                polygons[a] = [x1, y1,
+                polygons_tmp[a] = [x1, y1,
                                x2, y2,
                                x3 + dx, y3 + dy,
                                x4, y4]
 
                 x1, y1, x2, y2, x3, y3, x4, y4 = polygons[b]
-                polygons[b] = [x1, y1,
+                polygons_tmp[b] = [x1, y1,
                                x2 + dx, y2 + dy,
                                x3, y3,
                                x4, y4]
 
                 x1, y1, x2, y2, x3, y3, x4, y4 = polygons[c]
-                polygons[c] = [x1, y1,
+                polygons_tmp[c] = [x1, y1,
                                x2, y2,
                                x3, y3,
                                x4 + dx, y4 + dy]
 
                 x1, y1, x2, y2, x3, y3, x4, y4 = polygons[d]
-                polygons[d] = [x1 + dx, y1 + dy,
+                polygons_tmp[d] = [x1 + dx, y1 + dy,
                                x2, y2,
                                x3, y3,
                                x4, y4]
 
             generated_mesh = []
+            #print("dimension: ",dimensions)
+            print("polygons: ",polygons_tmp)
+            
             for i in range(len(dimensions)):
-                generated_mesh.append([dimensions[i], polygons[i]])
+                generated_mesh.append([dimensions[i], polygons_tmp[i]])
 
             return image.transform(image.size, Image.MESH, generated_mesh, resample=Image.BICUBIC)
 
         augmented_images = []
-
+        
         for image in images:
+            #print("polygon_indices: ",polygon_indices)
+            print("polygon: ",polygons)
+            #print("dx and dy: ", dx,dy)
             augmented_images.append(do(image))
 
         return augmented_images
